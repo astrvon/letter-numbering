@@ -1,12 +1,12 @@
 "use client";
 
+import type React from "react";
 import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format } from "date-fns";
 import { CalendarIcon, Loader2, Plus, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +48,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createLetter, getLetters } from "@/app/actions";
+import { createLetter, getLetters, type TLetter } from "@/app/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const letterTypes = [
@@ -74,8 +74,7 @@ const formSchema = z.object({
 });
 
 export default function Page() {
-  const router = useRouter();
-  const [letters, setLetters] = useState([]);
+  const [letters, setLetters] = useState<Record<string, TLetter>[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -126,24 +125,6 @@ export default function Page() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getMonthInRoman = (date: Date) => {
-    const months = [
-      "I",
-      "II",
-      "III",
-      "IV",
-      "V",
-      "VI",
-      "VII",
-      "VIII",
-      "IX",
-      "X",
-      "XI",
-      "XII",
-    ];
-    return months[date.getMonth()];
   };
 
   return (
@@ -334,19 +315,21 @@ export default function Page() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {letters.map((letter: any) => (
-                        <TableRow key={letter.id}>
-                          <TableCell className="font-medium whitespace-nowrap">
-                            {letter.letter_number}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
-                            {letter.subject}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell whitespace-nowrap">
-                            {format(new Date(letter.created_at), "PPP")}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {letters.map(
+                        (item: Record<string, TLetter>): React.ReactNode => (
+                          <TableRow key={item.letter.id}>
+                            <TableCell className="font-medium whitespace-nowrap">
+                              {item.letter.id}
+                            </TableCell>
+                            <TableCell className="max-w-[200px] truncate">
+                              {item.letter.subject}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell whitespace-nowrap">
+                              {format(new Date(item.letter.created_at), "PPP")}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      )}
                     </TableBody>
                   </Table>
                 </div>

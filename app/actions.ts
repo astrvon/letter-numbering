@@ -1,7 +1,18 @@
 "use server";
 
+import "server-only";
 import { neon } from "@neondatabase/serverless";
 import { revalidatePath } from "next/cache";
+
+export type TLetter = {
+  id: number;
+  letter_number: string;
+  letter_type: string;
+  subject: string;
+  recipient: string;
+  sequence_number: number;
+  created_at: Date;
+};
 
 const sql = neon(process.env.DATABASE_URL!);
 
@@ -50,9 +61,12 @@ export async function createLetter(data: {
   subject: string;
   recipient: string;
   date: Date;
-}) {
+}): Promise<{ success: boolean; letterNumber: string }> {
   try {
-    const letterNumber = await generateLetterNumber(data.letterType, data.date);
+    const letterNumber: string = await generateLetterNumber(
+      data.letterType,
+      data.date
+    );
 
     await sql`
       INSERT INTO letters (
@@ -83,9 +97,9 @@ export async function createLetter(data: {
   }
 }
 
-export async function getLetters() {
+export async function getLetters(): Promise<Record<string, TLetter>[]> {
   try {
-    const letters = await sql`
+    const letters: Record<string, TLetter>[] = await sql`
       SELECT * FROM letters
       ORDER BY created_at DESC
       LIMIT 10
