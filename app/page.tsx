@@ -319,7 +319,7 @@ export default function Page() {
                         (letter: TLetter): React.ReactNode => (
                           <TableRow key={letter.id}>
                             <TableCell className="font-medium whitespace-nowrap">
-                              {letter.id}
+                              {letter.letter_number}
                             </TableCell>
                             <TableCell className="max-w-[200px] truncate">
                               {letter.subject}
