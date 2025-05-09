@@ -1,103 +1,360 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { format } from "date-fns";
+import { CalendarIcon, Loader2, Plus, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { createLetter, getLetters } from "@/app/actions";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+const letterTypes = [
+  { id: "SK-PBR", name: "Surat Keterangan - Pembukaan Bank Rekening" },
+  { id: "SK-PKR", name: "Surat Keterangan - Penutupan Rekening" },
+  { id: "SK-KRJ", name: "Surat Keterangan - Kerjasama" },
+  { id: "SK-PGW", name: "Surat Keterangan - Pegawai" },
+];
+
+const formSchema = z.object({
+  letterType: z.string({
+    required_error: "Please select a letter type.",
+  }),
+  subject: z.string().min(3, {
+    message: "Subject must be at least 3 characters.",
+  }),
+  recipient: z.string().min(3, {
+    message: "Recipient must be at least 3 characters.",
+  }),
+  date: z.date({
+    required_error: "Please select a date.",
+  }),
+});
+
+export default function Page() {
+  const router = useRouter();
+  const [letters, setLetters] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      letterType: undefined,
+      subject: "",
+      recipient: "",
+      date: new Date(),
+    },
+  });
+
+  const fetchLetters = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getLetters();
+      setLetters(data);
+    } catch (error) {
+      console.error("Failed to fetch letters:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLetters();
+  }, []);
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    try {
+      await createLetter({
+        letterType: values.letterType,
+        subject: values.subject,
+        recipient: values.recipient,
+        date: values.date,
+      });
+      form.reset({
+        letterType: undefined,
+        subject: "",
+        recipient: "",
+        date: new Date(),
+      });
+      fetchLetters();
+    } catch (error) {
+      console.error("Failed to create letter:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getMonthInRoman = (date: Date) => {
+    const months = [
+      "I",
+      "II",
+      "III",
+      "IV",
+      "V",
+      "VI",
+      "VII",
+      "VIII",
+      "IX",
+      "X",
+      "XI",
+      "XII",
+    ];
+    return months[date.getMonth()];
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <main className="relative min-h-screen w-full bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold md:text-3xl">
+            Letter Numbering System
+          </h1>
+          <ThemeToggle />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+          <Card className="h-fit">
+            <CardHeader>
+              <CardTitle>Create New Letter</CardTitle>
+              <CardDescription>
+                Generate a new letter number in the format:
+                001/SK-PBR/ABR/V/2025
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <FormField
+                    control={form.control}
+                    name="letterType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Letter Type</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select letter type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {letterTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          This will be used in the letter number format.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Letter subject" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="recipient"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Recipient</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Letter recipient" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormDescription>
+                          This will determine the month and year in the letter
+                          number.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Generate Letter Number
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Recent Letters</CardTitle>
+                <CardDescription>
+                  List of recently generated letter numbers
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={fetchLetters}
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={cn("h-4 w-4", isLoading && "animate-spin")}
+                />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {letters.length === 0 ? (
+                <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No letters generated yet
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="whitespace-nowrap">
+                          Letter Number
+                        </TableHead>
+                        <TableHead>Subject</TableHead>
+                        <TableHead className="hidden md:table-cell">
+                          Date
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {letters.map((letter: any) => (
+                        <TableRow key={letter.id}>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            {letter.letter_number}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            {letter.subject}
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell whitespace-nowrap">
+                            {format(new Date(letter.created_at), "PPP")}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </main>
   );
 }
