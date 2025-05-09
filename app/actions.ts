@@ -97,7 +97,7 @@ export async function createLetter(data: {
   }
 }
 
-export async function getLetters(): Promise<Record<string, TLetter>[]> {
+export async function getLetters(): Promise<TLetter[]> {
   try {
     const letters: Record<string, TLetter>[] = await sql`
       SELECT * FROM letters
@@ -105,7 +105,7 @@ export async function getLetters(): Promise<Record<string, TLetter>[]> {
       LIMIT 10
     `;
 
-    return letters;
+    return letters as unknown as TLetter[];
   } catch (error) {
     console.error("Error fetching letters:", error);
     throw new Error("Failed to fetch letters");

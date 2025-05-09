@@ -74,7 +74,7 @@ const formSchema = z.object({
 });
 
 export default function Page() {
-  const [letters, setLetters] = useState<Record<string, TLetter>[]>([]);
+  const [letters, setLetters] = useState<TLetter[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -316,16 +316,16 @@ export default function Page() {
                     </TableHeader>
                     <TableBody>
                       {letters.map(
-                        (item: Record<string, TLetter>): React.ReactNode => (
-                          <TableRow key={item.letter.id}>
+                        (letter: TLetter): React.ReactNode => (
+                          <TableRow key={letter.id}>
                             <TableCell className="font-medium whitespace-nowrap">
-                              {item.letter.id}
+                              {letter.id}
                             </TableCell>
                             <TableCell className="max-w-[200px] truncate">
-                              {item.letter.subject}
+                              {letter.subject}
                             </TableCell>
                             <TableCell className="hidden md:table-cell whitespace-nowrap">
-                              {format(new Date(item.letter.created_at), "PPP")}
+                              {format(new Date(letter.created_at), "PPP")}
                             </TableCell>
                           </TableRow>
                         )
